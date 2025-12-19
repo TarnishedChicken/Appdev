@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Syntryx - Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <!-- PDF Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Notification animations */
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Mobile Menu Button -->
+    <button class="mobile-menu-btn" id="mobileMenuBtn">
+        <i class="ri-menu-line"></i>
+    </button>
+    
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="container">
+        <!-- SIDEBAR -->
+        <aside class="sidebar" id="sidebar">
+            <div class="logo-container">
+                <h1 class="logo">Syntryx</h1>
+                <button class="collapse-btn" id="collapseBtn" title="Collapse sidebar">
+                    <i class="ri-arrow-left-s-line"></i>
+                </button>
+            </div>
+            
+            <ul class="menu">
+                <li class="active" data-page="dashboard">
+                    <i class="ri-dashboard-line"></i> <span class="menu-text">Dashboard</span>
+                </li>
+                <li data-page="orders">
+                    <i class="ri-shopping-bag-line"></i> <span class="menu-text">Orders</span>
+                </li>
+                <li data-page="inventory">
+                    <i class="ri-archive-line"></i> <span class="menu-text">Inventory</span>
+                </li>
+                <li data-page="shipping">
+                    <i class="ri-truck-line"></i> <span class="menu-text">Shipping</span>
+                </li>
+                <li data-page="crud">
+                    <i class="ri-add-circle-line"></i> <span class="menu-text">Manage Products</span>
+                </li>
+            </ul>
+        </aside>
+        
+        <!-- MAIN CONTENT -->
+        <main class="main" id="mainContent">
+            <!-- DASHBOARD PAGE -->
+            <div class="page-content active" id="dashboard">
+                <h2 class="title">Dashboard</h2>
+                
+                <div class="grid">
+                    <!-- Total Products -->
+                    <div class="card">
+                        <h3>Total Products</h3>
+                        <div class="value" id="totalProducts">0</div>
+                        <div class="trend">
+                            <i class="ri-line-chart-line"></i> Loading...
+                        </div>
+                    </div>
+                    
+                    <!-- Low Stock Alerts -->
+                    <div class="card">
+                        <h3>Low Stock Alerts</h3>
+                        <div class="value" id="lowStockCount">0</div>
+                        <div class="trend" style="color: #ff6e4a;">
+                            <i class="ri-alert-line"></i> Requires attention
+                        </div>
+                    </div>
+                    
+                    <!-- Sales This Month -->
+                    <div class="card pie1">
+                        <h3>Sales This Month</h3>
+                        <div class="value">₱1.5B</div>
+                        <div class="trend">
+                            <i class="ri-line-chart-line"></i> +12.8% from last month
+                        </div>
+                    </div>
+                    
+                    <!-- Shipping Status -->
+                    <div class="card pie2">
+                        <h3>Shipping Status</h3>
+                        
+                        <div class="pie-container">
+                            <div class="pie-chart"></div>
+                            <div class="pie-center" id="pieTotal">100%</div>
+                        </div>
+                        
+                        <div class="legend" id="categoryLegend">
+                            <!-- Legend will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Activity Section -->
+                <div style="margin-top: 40px;">
+                    <div class="card activity-card" style="margin-bottom: 0;">
+                        <h3>Recent Activity <a href="#" class="view-all" id="clearActivityBtn">
+                            <i class="ri-delete-bin-line"></i> Clear All
+                        </a></h3>
+                        <div id="recentActivity">
+                            <!-- Activity items will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+                <br><br>
+                
+                <!-- Recent Orders Table -->
+                <div class="table-container">
+                    <h3 style="padding: 20px 20px 10px; font-size: 18px; color: #2d3748;">Recent Orders</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Date</th>
+                                <th>Customer</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recentOrders">
+                            <!-- Orders will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- ORDERS PAGE -->
+            <div class="page-content" id="orders">
+                <h2 class="title">Orders</h2>
+                
+                <div class="action-buttons">
+                    <div class="export-dropdown">
+                        <button class="btn btn-primary" id="exportDropdownBtn">
+                            <i class="ri-download-line"></i> Export Orders <i class="ri-arrow-down-s-line"></i>
+                        </button>
+                        <div class="dropdown-menu" id="exportDropdownMenu">
+                            <a href="#" class="dropdown-item" id="exportPdfBtn">
+                                <i class="ri-file-pdf-line"></i> Export as PDF
+                            </a>
+                            <a href="#" class="dropdown-item" id="exportExcelBtn">
+                                <i class="ri-file-excel-line"></i> Export as Excel
+                            </a>
+                            <a href="#" class="dropdown-item" id="exportCsvBtn">
+                                <i class="ri-file-text-line"></i> Export as CSV
+                            </a>
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary" id="printOrdersBtn">
+                        <i class="ri-printer-line"></i> Print Orders
+                    </button>
+                    <button class="btn btn-info" id="refreshOrdersBtn">
+                        <i class="ri-refresh-line"></i> Refresh
+                    </button>
+                </div>
+                
+                <!-- Orders Statistics Cards -->
+                <div class="grid" style="margin-bottom: 30px;">
+                    <div class="card">
+                        <h3>Total Orders</h3>
+                        <div class="value" id="totalOrdersCount">0</div>
+                        <div class="trend">
+                            <i class="ri-shopping-bag-line"></i> All time orders
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>Pending Orders</h3>
+                        <div class="value" id="pendingOrdersCount">0</div>
+                        <div class="trend" style="color: #ed8936;">
+                            <i class="ri-time-line"></i> Awaiting processing
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>Revenue This Month</h3>
+                        <div class="value" id="monthlyRevenue">₱0</div>
+                        <div class="trend">
+                            <i class="ri-line-chart-line"></i> Current month
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>Total Revenue</h3>
+                        <div class="value" id="totalRevenue">₱0</div>
+                        <div class="trend">
+                            <i class="ri-money-dollar-circle-line"></i> All time revenue
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="table-container">
+                    <table id="ordersTable">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Date</th>
+                                <th>Customer</th>
+                                <th>Status</th>
+                                <th>Shipping Status</th>
+                                <th>Total (₱)</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ordersBody">
+                            <!-- Orders will be populated by JavaScript -->
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="6" style="text-align: right; font-weight: bold;">Total Revenue:</td>
+                                <td id="ordersTotal" style="font-weight: bold; color: #2d3748;">₱0</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- INVENTORY PAGE -->
+            <div class="page-content" id="inventory">
+                <h2 class="title">Inventory</h2>
+                
+                <div class="action-buttons">
+                    <button class="btn btn-success" id="addProductBtn">
+                        <i class="ri-add-line"></i> Add Product
+                    </button>
+                    <button class="btn btn-primary" id="refreshInventoryBtn">
+                        <i class="ri-refresh-line"></i> Refresh
+                    </button>
+                </div>
+                
+                <div class="table-container">
+                    <table id="inventoryTable">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Model</th>
+                                <th>Category</th>
+                                <th>Quantity</th>
+                                <th>Price</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventoryBody">
+                            <!-- Inventory items will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- SHIPPING PAGE -->
+            <div class="page-content" id="shipping">
+                <h2 class="title">Shipping Management</h2>
+                
+                <div class="action-buttons">
+                    <button class="btn btn-primary" id="refreshShippingBtn">
+                        <i class="ri-refresh-line"></i> Refresh
+                    </button>
+                    <button class="btn btn-success" id="updateShippingBtn">
+                        <i class="ri-truck-line"></i> Update Shipping Status
+                    </button>
+                </div>
+                
+                <!-- Shipping Statistics Cards -->
+                <div class="grid" style="margin-bottom: 30px;">
+                    <div class="card">
+                        <h3>Pending Shipments</h3>
+                        <div class="value" id="pendingShipments">0</div>
+                        <div class="trend" style="color: #ed8936;">
+                            <i class="ri-time-line"></i> Awaiting processing
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>In Transit</h3>
+                        <div class="value" id="inTransit">0</div>
+                        <div class="trend" style="color: #4299e1;">
+                            <i class="ri-truck-line"></i> Currently shipping
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>Delivered Today</h3>
+                        <div class="value" id="deliveredToday">0</div>
+                        <div class="trend" style="color: #48bb78;">
+                            <i class="ri-checkbox-circle-line"></i> Successfully delivered
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>Avg Delivery Time</h3>
+                        <div class="value" id="avgDeliveryTime">3.2</div>
+                        <div class="trend">
+                            <i class="ri-timer-line"></i> days
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="table-container">
+                    <table id="shippingTable">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Date</th>
+                                <th>Customer</th>
+                                <th>Shipping Address</th>
+                                <th>Tracking Number</th>
+                                <th>Shipping Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="shippingBody">
+                            <!-- Shipping items will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- CRUD MANAGEMENT PAGE -->
+            <div class="page-content" id="crud">
+                <h2 class="title">Manage Products</h2>
+                
+                <div class="action-buttons">
+                    <button class="btn btn-success" id="createProductBtn">
+                        <i class="ri-add-line"></i> Create New Product
+                    </button>
+                    <button class="btn btn-primary" id="refreshProductsBtn">
+                        <i class="ri-refresh-line"></i> Refresh List
+                    </button>
+                </div>
+                
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Product Name</th>
+                                <th>Category</th>
+                                <th>Quantity</th>
+                                <th>Price</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productsTable">
+                            <!-- Products will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- CRUD MODAL -->
+    <div class="crud-modal" id="crudModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">Add Product</h3>
+                <button class="close-btn" id="closeModal">
+                    <i class="ri-close-line"></i>
+                </button>
+            </div>
+            <form id="productForm">
+                <div class="form-group">
+                    <label for="productName">Product Name</label>
+                    <input type="text" id="productName" class="form-control" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="productModel">Model</label>
+                    <input type="text" id="productModel" class="form-control" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="productCategory">Category</label>
+                    <select id="productCategory" class="form-control" required>
+                        <option value="">Select Category</option>
+                        <option value="Laptops">Laptops</option>
+                        <option value="Phones">Phones</option>
+                        <option value="GPU">GPU</option>
+                        <option value="Headphones">Headphones</option>
+                        <option value="Accessories">Accessories</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="productQuantity">Quantity</label>
+                    <input type="number" id="productQuantity" class="form-control" min="0" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="productPrice">Price (₱)</label>
+                    <input type="number" id="productPrice" class="form-control" min="0" step="0.01" required>
+                </div>
+                
+                <div class="form-group" id="productIdField" style="display: none;">
+                    <label for="productId">Product ID</label>
+                    <input type="text" id="productId" class="form-control" readonly>
+                </div>
+                
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                    <button type="button" class="btn btn-secondary" id="cancelBtn">
+                        <i class="ri-close-line"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="submitBtn">
+                        <i class="ri-add-line"></i> Add Product
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SHIPPING MODAL -->
+    <div class="crud-modal" id="shippingModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Update Shipping Status</h3>
+                <button class="close-btn" id="closeShippingModal">
+                    <i class="ri-close-line"></i>
+                </button>
+            </div>
+            <form id="shippingForm">
+                <div class="form-group">
+                    <label for="shippingOrderId">Order ID</label>
+                    <input type="text" id="shippingOrderId" class="form-control" readonly>
+                </div>
+                
+                <div class="form-group">
+                    <label for="shippingCustomer">Customer</label>
+                    <input type="text" id="shippingCustomer" class="form-control" readonly>
+                </div>
+                
+                <div class="form-group">
+                    <label for="shippingAddress">Shipping Address</label>
+                    <textarea id="shippingAddress" class="form-control" rows="3"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="shippingStatus">Shipping Status</label>
+                    <select id="shippingStatus" class="form-control" required>
+                        <option value="pending">Pending</option>
+                        <option value="processing">Processing</option>
+                        <option value="shipped">Shipped</option>
+                        <option value="delivered">Delivered</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="trackingNumber">Tracking Number</label>
+                    <input type="text" id="trackingNumber" class="form-control" placeholder="Enter tracking number">
+                </div>
+                
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                    <button type="button" class="btn btn-secondary" id="cancelShippingBtn">
+                        <i class="ri-close-line"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn btn-success" id="submitShippingBtn">
+                        <i class="ri-check-line"></i> Update Shipping
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/sc.js">
+ 
+    </script>
+</body>
+</html>
